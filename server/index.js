@@ -18,6 +18,7 @@ const goodsReceiptRoutes = require('./routes/goodsReceipts');
 const dashboardRoutes = require('./routes/dashboard');
 const reportsRoutes = require('./routes/reports');
 const productRoutes = require('./routes/products');
+const userRoutes = require('./routes/users');
 
 // Connect to database
 connectDB();
@@ -62,6 +63,7 @@ app.use('/api/goods-receipts', goodsReceiptRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

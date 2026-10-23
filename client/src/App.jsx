@@ -17,6 +17,12 @@ import VendorDetail from './pages/VendorDetail'
 import VendorForm from './pages/VendorForm'
 import ProductList from './pages/ProductList'
 import Reports from './pages/Reports'
+import UserList from './pages/UserList'
+
+function AdminRoute({ children }) {
+  const { user } = useAuth()
+  return user?.role === 'admin' ? children : <Navigate to="/" replace />
+}
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -62,6 +68,8 @@ function AppRoutes() {
         <Route path="products" element={<ProductList />} />
         {/* Reports */}
         <Route path="reports" element={<Reports />} />
+        {/* Users (admin only) */}
+        <Route path="users" element={<AdminRoute><UserList /></AdminRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
