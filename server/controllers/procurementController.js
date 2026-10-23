@@ -2,6 +2,59 @@ const Procurement = require('../models/Procurement');
 const Vendor = require('../models/Vendor');
 const GoodsReceipt = require('../models/GoodsReceipt');
 const { calculatePrices } = require('../utils/priceCalculator');
+const Indent = require('../models/Indent');
+
+// PO status -> Indent status
+const INDENT_STATUS_FROM_PO = {
+  Ordered: 'Ordered',
+  Pending: 'Ordered',
+  Sample: 'Ordered',
+  'Partially Received': 'Partially Received',
+  Received: 'Received',
+};
+
+// Keep the linked indent in step with the purchase order
+const syncIndentFromPO = async (po) => {
+  if (!po?.indentRef) return;
+  const indentId = po.indentRef._id || po.indentRef;
+
+  // Cancelled PO: release the indent back to Pending so it can be re-ordered
+  if (po.status === 'Cancelled') {
+    await Indent.findOneAndUpdate(
+      { _id: indentId, purchaseOrderRef: po._id },
+      { $unset: { purchaseOrderRef: 1 }, status: 'Pending', receivedQuantity: 0 }
+    );
+    return;
+  }
+
+  // Only sync if the indent is linked to this PO (or not linked yet) —
+  // a re-activated old PO must not hijack an indent that has a newer PO
+  await Indent.findOneAndUpdate(
+    { _id: indentId, $or: [{ purchaseOrderRef: po._id }, { purchaseOrderRef: null }] },
+    {
+      purchaseOrderRef: po._id,
+      status: INDENT_STATUS_FROM_PO[po.status] || 'Ordered',
+      receivedQuantity: po.receivedQuantity || 0,
+    }
+  );
+};
+
+// Validates/normalises receivedQuantity against status. Returns an error message or null.
+const resolveReceivedQuantity = (status, receivedQuantity, quantity) => {
+  if (status === 'Received') return { value: quantity || 0 };
+  if (status === 'Partially Received') {
+    const rq = parseFloat(receivedQuantity);
+    if (!(rq > 0)) return { error: 'Please enter the partially received quantity' };
+    if (quantity && rq >= quantity) {
+      return { error: `Partially received quantity must be less than the ordered quantity (${quantity})` };
+    }
+    return { value: rq };
+  }
+  if (status === 'Ordered' || status === 'Pending') return { value: 0 };
+  if (receivedQuantity === undefined || receivedQuantity === '') return { value: undefined };
+  const rq = parseFloat(receivedQuantity);
+  return { value: rq >= 0 ? rq : 0 };
+};
 
 // @desc    Get all procurement orders
 // @route   GET /api/procurement
@@ -108,7 +161,21 @@ const getProcurement = async (req, res, next) => {
 // @access  Private
 const createProcurement = async (req, res, next) => {
   try {
-    const { vendor: vendorId, quantity, unit, totalPrice, ...rest } = req.body;
+    const { vendor: vendorId, quantity, unit, totalPrice, receivedQuantity, indentRef, ...rest } = req.body;
+
+    const qtyNum = parseFloat(quantity) || undefined;
+    const rqResult = resolveReceivedQuantity(rest.status || 'Ordered', receivedQuantity, qtyNum);
+    if (rqResult.error) return res.status(400).json({ success: false, message: rqResult.error });
+
+    let linkedIndentId;
+    if (indentRef) {
+      const indent = await Indent.findById(indentRef);
+      if (!indent) return res.status(400).json({ success: false, message: 'Linked indent not found' });
+      if (indent.purchaseOrderRef && await Procurement.exists({ _id: indent.purchaseOrderRef })) {
+        return res.status(400).json({ success: false, message: 'A purchase order already exists for this indent' });
+      }
+      linkedIndentId = indent._id;
+    }
 
     let vendorSnapshot = {};
     if (vendorId) {
@@ -137,10 +204,14 @@ const createProcurement = async (req, res, next) => {
       unit,
       totalPrice: parseFloat(totalPrice) || undefined,
       ...priceFields,
+      indentRef: linkedIndentId,
+      receivedQuantity: rqResult.value || 0,
       orderedBy: req.user.id,
       orderedByName: req.user.name,
       createdBy: req.user.id,
     });
+
+    await syncIndentFromPO(record);
 
     const populated = await Procurement.findById(record._id)
       .populate('vendor', 'name contactPerson phone')
@@ -157,7 +228,8 @@ const createProcurement = async (req, res, next) => {
 // @access  Private
 const updateProcurement = async (req, res, next) => {
   try {
-    const { vendor: vendorId, quantity, unit, totalPrice, ...rest } = req.body;
+    // indentRef is set on creation only; ignore attempts to change it here
+    const { vendor: vendorId, quantity, unit, totalPrice, receivedQuantity, indentRef: _ignored, ...rest } = req.body;
 
     const existing = await Procurement.findById(req.params.id);
     if (!existing) return res.status(404).json({ success: false, message: 'Record not found' });
@@ -175,6 +247,11 @@ const updateProcurement = async (req, res, next) => {
     const tp = totalPrice !== undefined ? parseFloat(totalPrice) : existing.totalPrice;
     const priceFields = calculatePrices(qty, u, tp);
 
+    const newStatus = rest.status || existing.status;
+    const rqResult = resolveReceivedQuantity(newStatus, receivedQuantity, qty);
+    if (rqResult.error) return res.status(400).json({ success: false, message: rqResult.error });
+    const rq = rqResult.value !== undefined ? rqResult.value : existing.receivedQuantity;
+
     const updated = await Procurement.findByIdAndUpdate(
       req.params.id,
       {
@@ -184,10 +261,13 @@ const updateProcurement = async (req, res, next) => {
         quantity: qty,
         unit: u,
         totalPrice: tp,
+        receivedQuantity: rq,
         ...priceFields,
       },
       { new: true, runValidators: true }
     ).populate('vendor', 'name contactPerson phone').populate('orderedBy', 'name');
+
+    await syncIndentFromPO(updated);
 
     res.json({ success: true, data: updated });
   } catch (error) {
@@ -202,10 +282,17 @@ const deleteProcurement = async (req, res, next) => {
   try {
     const record = await Procurement.findByIdAndDelete(req.params.id);
     if (!record) return res.status(404).json({ success: false, message: 'Procurement record not found' });
+    // Unlink the indent and return it to Pending so a new PO can be raised
+    if (record.indentRef) {
+      await Indent.findOneAndUpdate(
+        { _id: record.indentRef, purchaseOrderRef: record._id },
+        { $unset: { purchaseOrderRef: 1 }, status: 'Pending', receivedQuantity: 0 }
+      );
+    }
     res.json({ success: true, message: 'Procurement record deleted successfully' });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { getProcurements, getProcurement, createProcurement, updateProcurement, deleteProcurement };
+module.exports = { getProcurements, getProcurement, createProcurement, updateProcurement, deleteProcurement, syncIndentFromPO };

@@ -4,7 +4,7 @@ import { Edit, Trash2, ArrowLeft, ShoppingCart } from 'lucide-react'
 import api from '../api/axios'
 import { LoadingSpinner, ConfirmDialog } from '../components/UI'
 import StatusBadge from '../components/StatusBadge'
-import { formatDate } from '../utils/helpers'
+import { formatDate, formatDateInput } from '../utils/helpers'
 import toast from 'react-hot-toast'
 
 export default function IndentDetail() {
@@ -51,6 +51,9 @@ export default function IndentDetail() {
           <Field label="Product Code" value={<span className="font-mono">{indent.productCode || '—'}</span>} />
           <Field label="Status" value={<StatusBadge status={indent.status} size="md" />} />
           <Field label="Qty to Order" value={indent.qtyToBeOrdered ? `${indent.qtyToBeOrdered} ${indent.unit}` : `${indent.unit}`} />
+          {(indent.status === 'Partially Received' || indent.status === 'Received') && (
+            <Field label="Received Qty" value={`${indent.receivedQuantity || 0} ${indent.unit}`} />
+          )}
           <Field label="Vendor" value={indent.vendorName || indent.vendor?.name || '—'} />
           <Field label="Contact No" value={indent.contactNo || '—'} />
           <Field label="Assigned To" value={indent.assignedTo?.name || indent.assignedToName || '—'} />
@@ -78,19 +81,36 @@ export default function IndentDetail() {
         )}
       </div>
 
-      {/* Convert to PO button */}
+      {/* Linked PO or Convert to PO button */}
+      {indent.purchaseOrderRef ? (
+        <div className="card p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-gray-800">Purchase Order Raised</p>
+            <p className="text-xs text-gray-500">
+              {indent.purchaseOrderRef.poReference ? `${indent.purchaseOrderRef.poReference} · ` : ''}
+              Ordered {indent.purchaseOrderRef.quantity || '—'} {indent.purchaseOrderRef.unit}
+              {indent.purchaseOrderRef.receivedQuantity > 0 && ` · Received ${indent.purchaseOrderRef.receivedQuantity} ${indent.purchaseOrderRef.unit}`}
+              {' · '}Status updates sync from the PO
+            </p>
+          </div>
+          <Link to={`/procurement/${indent.purchaseOrderRef._id}`} className="btn-secondary">
+            <ShoppingCart size={14} /> View PO
+          </Link>
+        </div>
+      ) : (
       <div className="card p-4 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-gray-800">Convert to Purchase Order</p>
           <p className="text-xs text-gray-500">Create a formal purchase order from this indent</p>
         </div>
         <Link
-          to={`/procurement/new?indentId=${id}&productCode=${indent.productCode || ''}&productName=${encodeURIComponent(indent.productName)}&qty=${indent.qtyToBeOrdered || ''}&unit=${indent.unit}&vendorId=${indent.vendor?._id || ''}`}
+          to={`/procurement/new?indentId=${id}&productCode=${indent.productCode || ''}&productName=${encodeURIComponent(indent.productName)}&qty=${indent.qtyToBeOrdered || ''}&unit=${indent.unit}&vendorId=${indent.vendor?._id || ''}&intendedDate=${indent.indentDate ? formatDateInput(indent.indentDate) : ''}`}
           className="btn-primary"
         >
           <ShoppingCart size={14} /> Create PO
         </Link>
       </div>
+      )}
 
       <ConfirmDialog
         open={confirmDelete}

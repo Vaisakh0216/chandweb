@@ -7,15 +7,20 @@ export default function PriceCalculatorPreview({ quantity, unit, totalPrice, cur
     parseFloat(quantity), unit, parseFloat(totalPrice)
   )
 
+  const showPerKg = priceCalculationType === 'per_kg' && pricePerKg !== null
+  // Avoid showing the same figure twice when the unit itself is kg
+  const isKgUnit = ['kg', 'kgs', 'kilogram', 'kilograms'].includes(String(unit).toLowerCase())
+  const showUnitPrice = unitPrice !== null && !(showPerKg && isKgUnit)
+
   return (
     <div className="mt-2 p-3 bg-forest-50 border border-forest-200 rounded-lg flex flex-wrap gap-4">
-      {priceCalculationType === 'per_kg' && pricePerKg !== null && (
+      {showPerKg && (
         <div>
           <p className="text-xs text-forest-600 font-medium">Price per kg</p>
           <p className="text-sm font-bold text-forest-800">{formatCurrency(pricePerKg, currency)}/kg</p>
         </div>
       )}
-      {unitPrice !== null && (
+      {showUnitPrice && (
         <div>
           <p className="text-xs text-forest-600 font-medium">Price per {unit}</p>
           <p className="text-sm font-bold text-forest-800">{formatCurrency(unitPrice, currency)}/{unit}</p>

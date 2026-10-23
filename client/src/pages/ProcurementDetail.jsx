@@ -57,6 +57,21 @@ export default function ProcurementDetail() {
           <Field label="Contact" value={record.vendorSnapshot?.phone || record.vendor?.phone || '—'} />
           <Field label="PO Reference" value={record.poReference || '—'} />
           <Field label="Quantity" value={record.quantity ? `${record.quantity} ${record.unit}` : record.unit} />
+          {(record.status === 'Partially Received' || record.status === 'Received') && (
+            <Field label="Received Qty" value={
+              <span>
+                {record.receivedQuantity || 0} {record.unit}
+                {record.status === 'Partially Received' && record.quantity > 0 && (
+                  <span className="text-amber-700 text-xs block">{+(record.quantity - (record.receivedQuantity || 0)).toFixed(3)} {record.unit} pending</span>
+                )}
+              </span>
+            } />
+          )}
+          {record.indentRef && (
+            <Field label="Indent" value={
+              <Link to={`/indents/${record.indentRef._id || record.indentRef}`} className="text-forest-700 hover:underline">View indent</Link>
+            } />
+          )}
           <Field label="Total Price" value={record.totalPrice ? formatCurrency(record.totalPrice, record.currency) : '—'} />
           <Field label="Price Per Kg" value={record.pricePerKg ? formatCurrency(record.pricePerKg, record.currency) + '/kg' : '—'} />
           <Field label="Ordered By" value={record.orderedBy?.name || record.orderedByName || '—'} />

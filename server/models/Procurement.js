@@ -84,6 +84,12 @@ const procurementSchema = new mongoose.Schema({
     enum: ['Ordered', 'Pending', 'Partially Received', 'Received', 'Cancelled', 'Sample'],
     default: 'Ordered',
   },
+  // Quantity received so far (used for "Partially Received")
+  receivedQuantity: {
+    type: Number,
+    min: [0, 'Received quantity cannot be negative'],
+    default: 0,
+  },
   deliveryStatus: {
     type: String,
     enum: ['Awaiting', 'In Transit', 'Received', 'Partially Received', 'Returned'],

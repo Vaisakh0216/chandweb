@@ -12,7 +12,7 @@ const EMPTY = {
   intendedDate: '', expectedDeliveryDate: '',
   productCode: '', productName: '', productDescription: '',
   vendor: '', quantity: '', unit: 'kg', totalPrice: '', currency: 'INR',
-  status: 'Ordered', deliveryStatus: 'Awaiting',
+  status: 'Ordered', deliveryStatus: 'Awaiting', receivedQuantity: '',
   poReference: '', vendorResponse: '', notes: '',
 }
 
@@ -28,7 +28,10 @@ export default function ProcurementForm() {
     quantity: searchParams.get('qty') || '',
     unit: searchParams.get('unit') || 'kg',
     vendor: searchParams.get('vendorId') || '',
+    intendedDate: searchParams.get('intendedDate') || '',
   })
+  const indentId = !isEdit ? searchParams.get('indentId') : null
+  const [linkedIndent, setLinkedIndent] = useState(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(isEdit)
 
@@ -50,24 +53,50 @@ export default function ProcurementForm() {
         currency: d.currency || 'INR',
         status: d.status || 'Ordered',
         deliveryStatus: d.deliveryStatus || 'Awaiting',
+        receivedQuantity: d.receivedQuantity || '',
         poReference: d.poReference || '',
         vendorResponse: d.vendorResponse || '',
         notes: d.notes || '',
       })
+      setLinkedIndent(d.indentRef || null)
     }).catch(() => toast.error('Failed to load order')).finally(() => setFetching(false))
   }, [id, isEdit])
 
+  useEffect(() => {
+    if (!indentId) return
+    api.get(`/indents/${indentId}`).then(r => setLinkedIndent(r.data.data)).catch(() => {})
+  }, [indentId])
+
   const set = field => e => setForm(f => ({ ...f, [field]: typeof e === 'string' ? e : e.target.value }))
+
+  // Received / Partially Received mean the same thing in both dropdowns, so keep them in step
+  const RECEIVED_STATES = ['Received', 'Partially Received']
+  const setLinkedStatus = (field, other) => e => {
+    const value = e.target.value
+    setForm(f => ({ ...f, [field]: value, ...(RECEIVED_STATES.includes(value) && { [other]: value }) }))
+  }
+
+  const isPartial = form.status === 'Partially Received'
+  const orderedQty = parseFloat(form.quantity) || 0
+  const receivedQty = parseFloat(form.receivedQuantity) || 0
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.productName.trim()) { toast.error('Product name is required'); return }
+    if (isPartial) {
+      if (!(receivedQty > 0)) { toast.error('Please enter the partially received quantity'); return }
+      if (orderedQty && receivedQty >= orderedQty) {
+        toast.error(`Received quantity must be less than the ordered quantity (${orderedQty})`); return
+      }
+    }
     setLoading(true)
     try {
       const payload = { ...form }
       if (!payload.vendor) delete payload.vendor
       if (!payload.quantity) delete payload.quantity
       if (!payload.totalPrice) delete payload.totalPrice
+      if (!isPartial) delete payload.receivedQuantity
+      if (indentId) payload.indentRef = indentId
       if (isEdit) await api.put(`/procurement/${id}`, payload)
       else await api.post('/procurement', payload)
       toast.success(isEdit ? 'Order updated!' : 'Order created!')
@@ -87,6 +116,14 @@ export default function ProcurementForm() {
         title={isEdit ? 'Edit Purchase Order' : 'New Purchase Order'}
         subtitle="Record a vendor order for materials"
       />
+
+      {linkedIndent && (
+        <div className="mb-4 p-3 rounded-lg bg-forest-50 border border-forest-200 text-sm text-forest-800">
+          Linked to indent <span className="font-semibold">{linkedIndent.productName}</span>
+          {linkedIndent.indentDate && <> dated {new Date(linkedIndent.indentDate).toLocaleDateString()}</>}
+          . Status changes here will update the indent automatically.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Order Info */}
@@ -171,16 +208,34 @@ export default function ProcurementForm() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Order Status</label>
-              <select value={form.status} onChange={set('status')} className="input">
+              <select value={form.status} onChange={setLinkedStatus('status', 'deliveryStatus')} className="input">
                 {PROCUREMENT_STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
               <label className="label">Delivery Status</label>
-              <select value={form.deliveryStatus} onChange={set('deliveryStatus')} className="input">
+              <select value={form.deliveryStatus} onChange={setLinkedStatus('deliveryStatus', 'status')} className="input">
                 {DELIVERY_STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
+            {isPartial && (
+              <div className="col-span-2">
+                <label className="label">Received Quantity So Far *</label>
+                <div className="flex items-center gap-3">
+                  <input type="number" value={form.receivedQuantity} onChange={set('receivedQuantity')}
+                    className="input max-w-[200px]" placeholder="0" min="0" step="any"
+                    max={orderedQty || undefined} required />
+                  <span className="text-sm text-gray-600">
+                    {form.unit}
+                    {orderedQty > 0 && <> of {orderedQty} {form.unit} ordered
+                      {receivedQty > 0 && receivedQty < orderedQty && (
+                        <span className="text-amber-700 font-medium"> · {+(orderedQty - receivedQty).toFixed(3)} {form.unit} pending</span>
+                      )}
+                    </>}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

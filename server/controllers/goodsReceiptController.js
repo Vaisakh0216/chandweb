@@ -2,6 +2,7 @@ const GoodsReceipt = require('../models/GoodsReceipt');
 const Procurement = require('../models/Procurement');
 const Vendor = require('../models/Vendor');
 const { calculatePrices, comparePrices } = require('../utils/priceCalculator');
+const { syncIndentFromPO } = require('./procurementController');
 
 // @desc    Get all goods receipts
 // @route   GET /api/goods-receipts
@@ -136,13 +137,20 @@ const createGoodsReceipt = async (req, res, next) => {
       createdBy: req.user.id,
     });
 
-    // Update linked procurement status
+    // Update linked procurement: add this delivery to the running total,
+    // mark it fully or partially received, and carry that through to the indent
     if (procId) {
-      await Procurement.findByIdAndUpdate(procId, {
-        deliveryStatus: 'Received',
-        status: 'Received',
-        goodsReceiptRef: receipt._id,
-      });
+      const po = await Procurement.findById(procId);
+      if (po) {
+        const totalReceived = (po.receivedQuantity || 0) + (parseFloat(receivedQuantity) || 0);
+        const status = po.quantity && totalReceived < po.quantity ? 'Partially Received' : 'Received';
+        po.receivedQuantity = po.quantity ? Math.min(totalReceived, po.quantity) : totalReceived;
+        po.status = status;
+        po.deliveryStatus = status;
+        po.goodsReceiptRef = receipt._id;
+        await po.save();
+        await syncIndentFromPO(po);
+      }
     }
 
     const populated = await GoodsReceipt.findById(receipt._id)

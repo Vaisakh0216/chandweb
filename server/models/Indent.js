@@ -47,6 +47,12 @@ const indentSchema = new mongoose.Schema({
     enum: ['Pending', 'Ordered', 'Partially Received', 'Received', 'Cancelled', 'On Hold'],
     default: 'Pending',
   },
+  // Synced from the linked purchase order
+  receivedQuantity: {
+    type: Number,
+    min: [0, 'Received quantity cannot be negative'],
+    default: 0,
+  },
   // CNS Remarks from the sheet
   cnsRemarks: {
     type: String,
