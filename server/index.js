@@ -24,6 +24,9 @@ connectDB();
 
 const app = express();
 
+// Behind Render/Netlify proxies, so the rate limiter sees the real client IP
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
