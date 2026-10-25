@@ -3,41 +3,7 @@ const Vendor = require('../models/Vendor');
 const GoodsReceipt = require('../models/GoodsReceipt');
 const { calculatePrices } = require('../utils/priceCalculator');
 const Indent = require('../models/Indent');
-
-// PO status -> Indent status
-const INDENT_STATUS_FROM_PO = {
-  Ordered: 'Ordered',
-  Pending: 'Ordered',
-  Sample: 'Ordered',
-  'Partially Received': 'Partially Received',
-  Received: 'Received',
-};
-
-// Keep the linked indent in step with the purchase order
-const syncIndentFromPO = async (po) => {
-  if (!po?.indentRef) return;
-  const indentId = po.indentRef._id || po.indentRef;
-
-  // Cancelled PO: release the indent back to Pending so it can be re-ordered
-  if (po.status === 'Cancelled') {
-    await Indent.findOneAndUpdate(
-      { _id: indentId, purchaseOrderRef: po._id },
-      { $unset: { purchaseOrderRef: 1 }, status: 'Pending', receivedQuantity: 0 }
-    );
-    return;
-  }
-
-  // Only sync if the indent is linked to this PO (or not linked yet) —
-  // a re-activated old PO must not hijack an indent that has a newer PO
-  await Indent.findOneAndUpdate(
-    { _id: indentId, $or: [{ purchaseOrderRef: po._id }, { purchaseOrderRef: null }] },
-    {
-      purchaseOrderRef: po._id,
-      status: INDENT_STATUS_FROM_PO[po.status] || 'Ordered',
-      receivedQuantity: po.receivedQuantity || 0,
-    }
-  );
-};
+const { syncIndentFromPO } = require('../utils/indentSync');
 
 // Validates/normalises receivedQuantity against status. Returns an error message or null.
 const resolveReceivedQuantity = (status, receivedQuantity, quantity) => {
@@ -295,4 +261,4 @@ const deleteProcurement = async (req, res, next) => {
   }
 };
 
-module.exports = { getProcurements, getProcurement, createProcurement, updateProcurement, deleteProcurement, syncIndentFromPO };
+module.exports = { getProcurements, getProcurement, createProcurement, updateProcurement, deleteProcurement };

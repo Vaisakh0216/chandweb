@@ -1,5 +1,6 @@
 const Indent = require('../models/Indent');
 const Vendor = require('../models/Vendor');
+const { applyPOStatus } = require('../utils/indentSync');
 
 // @desc    Get all indents
 // @route   GET /api/indents
@@ -29,6 +30,7 @@ const getIndents = async (req, res, next) => {
       Indent.find(query)
         .populate('vendor', 'name contactPerson phone')
         .populate('assignedTo', 'name')
+        .populate('purchaseOrderRef', 'status receivedQuantity quantity unit poReference')
         .sort(sort)
         .skip(skip)
         .limit(parseInt(limit)),
@@ -37,7 +39,7 @@ const getIndents = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: indents,
+      data: indents.map(applyPOStatus),
       pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) },
     });
   } catch (error) {
@@ -57,7 +59,7 @@ const getIndent = async (req, res, next) => {
       .populate('purchaseOrderRef');
 
     if (!indent) return res.status(404).json({ success: false, message: 'Indent not found' });
-    res.json({ success: true, data: indent });
+    res.json({ success: true, data: applyPOStatus(indent) });
   } catch (error) {
     next(error);
   }
@@ -98,13 +100,19 @@ const createIndent = async (req, res, next) => {
 // @access  Private
 const updateIndent = async (req, res, next) => {
   try {
-    const { vendor: vendorId, ...rest } = req.body;
+    // The PO link and received quantity are managed by the purchase order
+    const { vendor: vendorId, purchaseOrderRef: _po, receivedQuantity: _rq, ...rest } = req.body;
     let vendorName = rest.vendorName;
 
     if (vendorId) {
       const vendor = await Vendor.findById(vendorId);
       if (vendor) vendorName = vendor.name;
     }
+
+    // While a PO is linked, its status drives the indent's status
+    const existing = await Indent.findById(req.params.id);
+    if (!existing) return res.status(404).json({ success: false, message: 'Indent not found' });
+    if (existing.purchaseOrderRef) delete rest.status;
 
     const indent = await Indent.findByIdAndUpdate(
       req.params.id,

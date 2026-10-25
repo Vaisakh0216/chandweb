@@ -2,7 +2,7 @@ const GoodsReceipt = require('../models/GoodsReceipt');
 const Procurement = require('../models/Procurement');
 const Vendor = require('../models/Vendor');
 const { calculatePrices, comparePrices } = require('../utils/priceCalculator');
-const { syncIndentFromPO } = require('./procurementController');
+const { syncIndentFromPO } = require('../utils/indentSync');
 
 // @desc    Get all goods receipts
 // @route   GET /api/goods-receipts

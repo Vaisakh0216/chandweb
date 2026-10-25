@@ -18,6 +18,7 @@ export default function IndentForm() {
   const navigate = useNavigate()
   const isEdit = Boolean(id)
   const [form, setForm] = useState(EMPTY)
+  const [linkedPO, setLinkedPO] = useState(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(isEdit)
 
@@ -40,6 +41,7 @@ export default function IndentForm() {
         contactNo: d.contactNo || '',
         notes: d.notes || '',
       })
+      setLinkedPO(d.purchaseOrderRef || null)
     }).catch(() => toast.error('Failed to load indent')).finally(() => setFetching(false))
   }, [id, isEdit])
 
@@ -52,6 +54,7 @@ export default function IndentForm() {
     try {
       const payload = { ...form }
       if (!payload.vendor) delete payload.vendor
+      if (linkedPO) delete payload.status
       if (isEdit) await api.put(`/indents/${id}`, payload)
       else await api.post('/indents', payload)
       toast.success(isEdit ? 'Indent updated!' : 'Indent created!')
@@ -83,9 +86,12 @@ export default function IndentForm() {
             </div>
             <div>
               <label className="label">Status</label>
-              <select value={form.status} onChange={set('status')} className="input">
+              <select value={form.status} onChange={set('status')} className="input" disabled={!!linkedPO}>
                 {INDENT_STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
+              {linkedPO && (
+                <p className="text-xs text-gray-500 mt-1">Synced from the linked purchase order. Change it there.</p>
+              )}
             </div>
             <div>
               <label className="label">Product Code</label>
