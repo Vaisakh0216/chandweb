@@ -7,6 +7,7 @@ import {
 import api from '../api/axios'
 import { SummaryCard, LoadingSpinner } from '../components/UI'
 import StatusBadge from '../components/StatusBadge'
+import TodoPanel from '../components/TodoPanel'
 import { formatDate, formatCurrency } from '../utils/helpers'
 import { StockLevel } from './PackingStockList'
 
@@ -94,7 +95,10 @@ export default function Dashboard() {
         />
       </div>
 
-      {packingStock && <PackingStockPanel stock={packingStock} />}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+        {packingStock && <div className="xl:col-span-2"><PackingStockPanel stock={packingStock} /></div>}
+        <div className={packingStock ? '' : 'xl:col-span-3'}><TodoPanel /></div>
+      </div>
 
       {/* Price Alerts */}
       {priceAlerts && priceAlerts.length > 0 && (

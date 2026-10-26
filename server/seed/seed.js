@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 
 const User = require('../models/User');
 const Vendor = require('../models/Vendor');
-const Product = require('../models/Product');
 const Indent = require('../models/Indent');
 const Procurement = require('../models/Procurement');
 const GoodsReceipt = require('../models/GoodsReceipt');
@@ -22,7 +21,6 @@ const seed = async () => {
   await Promise.all([
     User.deleteMany(),
     Vendor.deleteMany(),
-    Product.deleteMany(),
     Indent.deleteMany(),
     Procurement.deleteMany(),
     GoodsReceipt.deleteMany(),
@@ -64,33 +62,6 @@ const seed = async () => {
   const vendorMap = {};
   vendors.forEach(v => { vendorMap[v.name] = v; });
   console.log('🏢 Created vendors');
-
-  // ── Products ────────────────────────────────────────────────────────────────
-  const productData = [
-    { productCode: '14370', productName: 'Sodium Cocoyl Glycinate - GALSOFT SCG', brand: 'GALSOFT', category: 'Surfactant', defaultUnit: 'kg' },
-    { productCode: '12340', productName: 'Dipotassium Glycyrrhizinate', brand: '', category: 'Active Ingredient', defaultUnit: 'grams' },
-    { productCode: '14540', productName: 'Stearic Acid', brand: '', category: 'Fatty Acid', defaultUnit: 'kg' },
-    { productCode: '14400', productName: 'Sodium Hydroxide', brand: '', category: 'Base', defaultUnit: 'kg' },
-    { productCode: '14380', productName: 'Sodium Gluconate', brand: '', category: 'Chelating Agent', defaultUnit: 'kg' },
-    { productCode: '14420', productName: 'Sodium Lactate', brand: '', category: 'Humectant', defaultUnit: 'kg' },
-    { productCode: '14880', productName: 'Potassium Sorbate', brand: '', category: 'Preservative', defaultUnit: 'kg' },
-    { productCode: '12949', productName: 'Iso Propyl Alcohol', brand: '', category: 'Solvent', defaultUnit: 'kg' },
-    { productCode: '12100', productName: 'Sweet Basil Oil', brand: 'Aethon', category: 'Essential Oil', defaultUnit: 'kg' },
-    { productCode: '13410', productName: 'Coffee Care 1 MOD-49262', brand: 'Robertet', category: 'Fragrance', defaultUnit: 'kg' },
-    { productCode: '13590', productName: 'Orange Blossom & Caramel - 44611', brand: 'Robertet', category: 'Fragrance', defaultUnit: 'kg' },
-    { productCode: '13740', productName: 'Peony Bloom 2 - 44466', brand: 'Robertet', category: 'Fragrance', defaultUnit: 'kg' },
-    { productCode: '14723', productName: 'VANILLA WARMTH 2', brand: 'Robertet', category: 'Fragrance', defaultUnit: 'kg' },
-    { productCode: '14510', productName: 'Stearamide propyl dimethyl amine', brand: 'Value Tree', category: 'Conditioner', defaultUnit: 'kg' },
-    { productCode: '4522', productName: 'TONKA BEAN', brand: '', category: 'Fragrance', defaultUnit: 'nos' },
-    { productCode: '4505', productName: 'Pomegranate', brand: '', category: 'Fragrance', defaultUnit: 'nos' },
-    { productCode: '4516', productName: 'Walnut', brand: '', category: 'Fragrance', defaultUnit: 'nos' },
-    { productCode: '4781', productName: 'Lilly of the valley', brand: '', category: 'Fragrance', defaultUnit: 'nos' },
-    { productCode: '4512', productName: 'Peony', brand: '', category: 'Fragrance', defaultUnit: 'nos' },
-    { productCode: 'RM-LAMSOFT', productName: 'Lamsoft PG65', brand: 'Sunshine', category: 'Conditioner', defaultUnit: 'kg' },
-  ];
-
-  const products = await Product.insertMany(productData.map(p => ({ ...p, isActive: true })));
-  console.log('📦 Created products');
 
   // ── Goods Receipts (Historical — from "Goods Receiving Data" sheet) ─────────
   const now = new Date();

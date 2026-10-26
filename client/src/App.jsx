@@ -15,7 +15,9 @@ import GoodsReceiptDetail from './pages/GoodsReceiptDetail'
 import VendorList from './pages/VendorList'
 import VendorDetail from './pages/VendorDetail'
 import VendorForm from './pages/VendorForm'
-import ProductList from './pages/ProductList'
+import InfluencerList from './pages/InfluencerList'
+import InfluencerForm from './pages/InfluencerForm'
+import InfluencerDetail from './pages/InfluencerDetail'
 import PackingStockList from './pages/PackingStockList'
 import PackingStockDetail from './pages/PackingStockDetail'
 import Reports from './pages/Reports'
@@ -66,8 +68,11 @@ function AppRoutes() {
         <Route path="vendors/new" element={<VendorForm />} />
         <Route path="vendors/:id" element={<VendorDetail />} />
         <Route path="vendors/:id/edit" element={<VendorForm />} />
-        {/* Products */}
-        <Route path="products" element={<ProductList />} />
+        {/* Influencers */}
+        <Route path="influencers" element={<InfluencerList />} />
+        <Route path="influencers/new" element={<InfluencerForm />} />
+        <Route path="influencers/:id" element={<InfluencerDetail />} />
+        <Route path="influencers/:id/edit" element={<InfluencerForm />} />
         {/* Packing material stock */}
         <Route path="packing-stock" element={<PackingStockList />} />
         <Route path="packing-stock/:id" element={<PackingStockDetail />} />

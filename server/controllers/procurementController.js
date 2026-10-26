@@ -53,7 +53,7 @@ const getProcurements = async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [records, total] = await Promise.all([
       Procurement.find(query)
-        .populate('vendor', 'name contactPerson phone')
+        .populate('vendor', 'name contactPerson phone email')
         .populate('orderedBy', 'name')
         .sort(sort)
         .skip(skip)
@@ -180,7 +180,7 @@ const createProcurement = async (req, res, next) => {
     await syncIndentFromPO(record);
 
     const populated = await Procurement.findById(record._id)
-      .populate('vendor', 'name contactPerson phone')
+      .populate('vendor', 'name contactPerson phone email')
       .populate('orderedBy', 'name');
 
     res.status(201).json({ success: true, data: populated });
@@ -201,7 +201,7 @@ const updateProcurement = async (req, res, next) => {
     if (!existing) return res.status(404).json({ success: false, message: 'Record not found' });
 
     let vendorSnapshot = existing.vendorSnapshot;
-    if (vendorId && vendorId !== String(existing.vendor)) {
+    if (vendorId) {
       const vendor = await Vendor.findById(vendorId);
       if (vendor) {
         vendorSnapshot = { name: vendor.name, contactPerson: vendor.contactPerson, phone: vendor.phone, email: vendor.email };
@@ -231,7 +231,7 @@ const updateProcurement = async (req, res, next) => {
         ...priceFields,
       },
       { new: true, runValidators: true }
-    ).populate('vendor', 'name contactPerson phone').populate('orderedBy', 'name');
+    ).populate('vendor', 'name contactPerson phone email').populate('orderedBy', 'name');
 
     await syncIndentFromPO(updated);
 

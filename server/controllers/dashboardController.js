@@ -2,7 +2,6 @@ const Indent = require('../models/Indent');
 const Procurement = require('../models/Procurement');
 const GoodsReceipt = require('../models/GoodsReceipt');
 const Vendor = require('../models/Vendor');
-const Product = require('../models/Product');
 const PackingMaterial = require('../models/PackingMaterial');
 const StockMovement = require('../models/StockMovement');
 

@@ -10,7 +10,7 @@ const EMPTY = {
   indentDate: formatDateInput(new Date()),
   productCode: '', productName: '', productDescription: '',
   qtyToBeOrdered: '', unit: 'kg', vendor: '', vendorName: '', vendorAlternate: '',
-  status: 'Pending', cnsRemarks: '', contactNo: '', notes: '',
+  status: 'Pending', cnsRemarks: '', contactNo: '', contactEmail: '', notes: '',
 }
 
 export default function IndentForm() {
@@ -39,6 +39,7 @@ export default function IndentForm() {
         status: d.status || 'Pending',
         cnsRemarks: d.cnsRemarks || '',
         contactNo: d.contactNo || '',
+        contactEmail: d.contactEmail || '',
         notes: d.notes || '',
       })
       setLinkedPO(d.purchaseOrderRef || null)
@@ -46,6 +47,17 @@ export default function IndentForm() {
   }, [id, isEdit])
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: typeof e === 'string' ? e : e.target.value }))
+
+  // Picking (or creating) a vendor fills the name and contact fields from the vendor record
+  const selectVendor = (vendorId, vendor) => setForm(f => ({
+    ...f,
+    vendor: vendorId,
+    ...(vendor && {
+      vendorName: vendor.name,
+      contactNo: vendor.phone || f.contactNo,
+      contactEmail: vendor.email || f.contactEmail,
+    }),
+  }))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -131,7 +143,11 @@ export default function IndentForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Select Vendor</label>
-              <VendorSelector value={form.vendor} onChange={(v) => setForm(f => ({ ...f, vendor: v }))} />
+              <VendorSelector
+                value={form.vendor}
+                onChange={selectVendor}
+                createDefaults={{ name: form.vendorName, phone: form.contactNo, email: form.contactEmail }}
+              />
             </div>
             <div>
               <label className="label">Vendor Name (Free Text)</label>
@@ -139,7 +155,11 @@ export default function IndentForm() {
             </div>
             <div>
               <label className="label">Contact No</label>
-              <input type="text" value={form.contactNo} onChange={set('contactNo')} className="input" placeholder="Vendor contact number" />
+              <input type="tel" value={form.contactNo} onChange={set('contactNo')} className="input" placeholder="Vendor contact number" />
+            </div>
+            <div>
+              <label className="label">Contact Email</label>
+              <input type="email" value={form.contactEmail} onChange={set('contactEmail')} className="input" placeholder="vendor@gmail.com" />
             </div>
           </div>
         </div>

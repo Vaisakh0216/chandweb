@@ -54,7 +54,8 @@ export default function ProcurementDetail() {
           <Field label="Order Status" value={<StatusBadge status={record.status} size="md" />} />
           <Field label="Delivery Status" value={<StatusBadge status={record.deliveryStatus} size="md" />} />
           <Field label="Vendor" value={record.vendorSnapshot?.name || record.vendor?.name || '—'} />
-          <Field label="Contact" value={record.vendorSnapshot?.phone || record.vendor?.phone || '—'} />
+          <Field label="Vendor Phone" value={record.vendorSnapshot?.phone || record.vendor?.phone || '—'} />
+          <Field label="Vendor Email" value={record.vendorSnapshot?.email || record.vendor?.email || '—'} />
           <Field label="PO Reference" value={record.poReference || '—'} />
           <Field label="Quantity" value={record.quantity ? `${record.quantity} ${record.unit}` : record.unit} />
           {(record.status === 'Partially Received' || record.status === 'Received') && (

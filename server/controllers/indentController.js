@@ -28,7 +28,7 @@ const getIndents = async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [indents, total] = await Promise.all([
       Indent.find(query)
-        .populate('vendor', 'name contactPerson phone')
+        .populate('vendor', 'name contactPerson phone email')
         .populate('assignedTo', 'name')
         .populate('purchaseOrderRef', 'status receivedQuantity quantity unit poReference')
         .sort(sort)
@@ -86,7 +86,7 @@ const createIndent = async (req, res, next) => {
     });
 
     const populated = await Indent.findById(indent._id)
-      .populate('vendor', 'name contactPerson phone')
+      .populate('vendor', 'name contactPerson phone email')
       .populate('assignedTo', 'name');
 
     res.status(201).json({ success: true, data: populated });
@@ -118,7 +118,7 @@ const updateIndent = async (req, res, next) => {
       req.params.id,
       { ...rest, vendor: vendorId || undefined, vendorName },
       { new: true, runValidators: true }
-    ).populate('vendor', 'name contactPerson phone').populate('assignedTo', 'name');
+    ).populate('vendor', 'name contactPerson phone email').populate('assignedTo', 'name');
 
     if (!indent) return res.status(404).json({ success: false, message: 'Indent not found' });
     res.json({ success: true, data: indent });

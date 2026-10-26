@@ -34,7 +34,7 @@ const getGoodsReceipts = async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [receipts, total] = await Promise.all([
       GoodsReceipt.find(query)
-        .populate('vendor', 'name contactPerson phone')
+        .populate('vendor', 'name contactPerson phone email')
         .populate('receivedBy', 'name')
         .sort(sort)
         .skip(skip)
@@ -154,7 +154,7 @@ const createGoodsReceipt = async (req, res, next) => {
     }
 
     const populated = await GoodsReceipt.findById(receipt._id)
-      .populate('vendor', 'name contactPerson phone')
+      .populate('vendor', 'name contactPerson phone email')
       .populate('receivedBy', 'name');
 
     res.status(201).json({ success: true, data: populated });
@@ -173,7 +173,7 @@ const updateGoodsReceipt = async (req, res, next) => {
     if (!existing) return res.status(404).json({ success: false, message: 'Goods receipt not found' });
 
     let vendorSnapshot = existing.vendorSnapshot;
-    if (vendorId && vendorId !== String(existing.vendor)) {
+    if (vendorId) {
       const vendor = await Vendor.findById(vendorId);
       if (vendor) vendorSnapshot = { name: vendor.name, contactPerson: vendor.contactPerson, phone: vendor.phone, email: vendor.email };
     }
@@ -197,7 +197,7 @@ const updateGoodsReceipt = async (req, res, next) => {
         priceCalculationType: priceFields.priceCalculationType,
       },
       { new: true, runValidators: true }
-    ).populate('vendor', 'name contactPerson phone').populate('receivedBy', 'name');
+    ).populate('vendor', 'name contactPerson phone email').populate('receivedBy', 'name');
 
     res.json({ success: true, data: updated });
   } catch (error) {

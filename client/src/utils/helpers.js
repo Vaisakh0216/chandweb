@@ -51,6 +51,11 @@ export const getStatusColor = (status) => {
     'Rejected':           'status-cancelled',
     'Pending Inspection': 'status-pending',
     'Conditional Approval': 'status-partial',
+    'Awaiting Video':     'status-on-hold',
+    'Refund Due':         'status-pending',
+    'Refunded':           'status-received',
+    'Unpaid':             'status-pending',
+    'Paid':               'status-received',
   }
   return map[status] || 'status-on-hold'
 }
@@ -62,3 +67,5 @@ export const INDENT_STATUSES = ['Pending', 'Ordered', 'Partially Received', 'Rec
 export const PROCUREMENT_STATUSES = ['Ordered', 'Pending', 'Partially Received', 'Received', 'Cancelled', 'Sample']
 export const DELIVERY_STATUSES = ['Awaiting', 'In Transit', 'Received', 'Partially Received', 'Returned']
 export const QUALITY_STATUSES = ['Pending Inspection', 'Approved', 'Rejected', 'Conditional Approval']
+export const INFLUENCER_PLATFORMS = ['Instagram', 'YouTube', 'Facebook', 'X', 'Other']
+export const REFUND_STATUSES = ['Awaiting Video', 'Refund Due', 'Refunded']

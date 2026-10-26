@@ -53,7 +53,8 @@ export default function GoodsReceiptDetail() {
           <Field label="Invoice No" value={<span className="font-mono">{receipt.invoiceNo || '—'}</span>} />
           <Field label="Invoice Date" value={formatDate(receipt.invoiceDate)} />
           <Field label="Vendor" value={receipt.vendorSnapshot?.name || receipt.vendor?.name || '—'} />
-          <Field label="Contact" value={receipt.vendorSnapshot?.phone || '—'} />
+          <Field label="Vendor Phone" value={receipt.vendorSnapshot?.phone || receipt.vendor?.phone || '—'} />
+          <Field label="Vendor Email" value={receipt.vendorSnapshot?.email || receipt.vendor?.email || '—'} />
           <Field label="Received Qty" value={`${receipt.receivedQuantity} ${receipt.unit}`} />
           <Field label="Total Price" value={receipt.totalPrice ? formatCurrency(receipt.totalPrice, receipt.currency) : '—'} />
           <Field label="Rate Per Unit" value={receipt.ratePerUnit ? formatCurrency(receipt.ratePerUnit, receipt.currency) + `/${receipt.unit}` : '—'} />

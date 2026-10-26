@@ -63,6 +63,12 @@ const indentSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  contactEmail: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'],
+  },
   // Reference to the actual purchase order created
   purchaseOrderRef: {
     type: mongoose.Schema.Types.ObjectId,

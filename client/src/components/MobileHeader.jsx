@@ -7,7 +7,7 @@ const PAGE_TITLES = {
   '/procurement': 'Purchase Orders',
   '/goods-receipts': 'Goods Received',
   '/vendors': 'Vendor Management',
-  '/products': 'Product Master',
+  '/influencers': 'Influencers',
   '/reports': 'Reports & Analytics',
 }
 

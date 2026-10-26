@@ -17,9 +17,10 @@ const indentRoutes = require('./routes/indents');
 const goodsReceiptRoutes = require('./routes/goodsReceipts');
 const dashboardRoutes = require('./routes/dashboard');
 const reportsRoutes = require('./routes/reports');
-const productRoutes = require('./routes/products');
 const userRoutes = require('./routes/users');
 const packingMaterialRoutes = require('./routes/packingMaterials');
+const todoRoutes = require('./routes/todos');
+const influencerRoutes = require('./routes/influencers');
 
 // Connect to database
 connectDB();
@@ -63,9 +64,10 @@ app.use('/api/indents', indentRoutes);
 app.use('/api/goods-receipts', goodsReceiptRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
-app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/packing-materials', packingMaterialRoutes);
+app.use('/api/todos', todoRoutes);
+app.use('/api/influencers', influencerRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

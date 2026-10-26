@@ -55,7 +55,8 @@ export default function IndentDetail() {
             <Field label="Received Qty" value={`${indent.receivedQuantity || 0} ${indent.unit}`} />
           )}
           <Field label="Vendor" value={indent.vendorName || indent.vendor?.name || '—'} />
-          <Field label="Contact No" value={indent.contactNo || '—'} />
+          <Field label="Contact No" value={indent.contactNo || indent.vendor?.phone || '—'} />
+          <Field label="Contact Email" value={indent.contactEmail || indent.vendor?.email || '—'} />
           <Field label="Assigned To" value={indent.assignedTo?.name || indent.assignedToName || '—'} />
           <Field label="Created" value={formatDate(indent.createdAt)} />
         </div>

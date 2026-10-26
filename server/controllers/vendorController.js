@@ -59,7 +59,13 @@ const getVendor = async (req, res, next) => {
 const createVendor = async (req, res, next) => {
   try {
     const { name, contactPerson, phone, email, address, notes } = req.body;
-    if (!name) return res.status(400).json({ success: false, message: 'Vendor name is required' });
+    if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'Vendor name is required' });
+
+    const escaped = name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const existing = await Vendor.findOne({ name: { $regex: `^${escaped}$`, $options: 'i' } }, 'name');
+    if (existing) {
+      return res.status(400).json({ success: false, message: `Vendor "${existing.name}" already exists`, data: existing });
+    }
 
     const vendor = await Vendor.create({
       name, contactPerson, phone, email, address, notes,
