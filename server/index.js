@@ -19,6 +19,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const reportsRoutes = require('./routes/reports');
 const productRoutes = require('./routes/products');
 const userRoutes = require('./routes/users');
+const packingMaterialRoutes = require('./routes/packingMaterials');
 
 // Connect to database
 connectDB();
@@ -64,6 +65,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/packing-materials', packingMaterialRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

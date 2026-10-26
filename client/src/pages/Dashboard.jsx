@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ClipboardList, ShoppingCart, PackageCheck, Users,
-  TrendingUp, TrendingDown, Plus, ArrowRight
+  TrendingUp, TrendingDown, Plus, ArrowRight, Boxes
 } from 'lucide-react'
 import api from '../api/axios'
 import { SummaryCard, LoadingSpinner } from '../components/UI'
 import StatusBadge from '../components/StatusBadge'
 import { formatDate, formatCurrency } from '../utils/helpers'
+import { StockLevel } from './PackingStockList'
 
 export default function Dashboard() {
   const [data, setData] = useState(null)
@@ -22,7 +23,7 @@ export default function Dashboard() {
 
   if (loading) return <LoadingSpinner />
 
-  const { summary, recentActivity, priceAlerts } = data || {}
+  const { summary, recentActivity, priceAlerts, packingStock } = data || {}
 
   return (
     <div className="space-y-6">
@@ -92,6 +93,8 @@ export default function Dashboard() {
           color="blue"
         />
       </div>
+
+      {packingStock && <PackingStockPanel stock={packingStock} />}
 
       {/* Price Alerts */}
       {priceAlerts && priceAlerts.length > 0 && (
@@ -222,6 +225,81 @@ export default function Dashboard() {
             </table>
           </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+function PackingStockPanel({ stock }) {
+  const stats = [
+    { label: 'Items in Stock', value: stock.totalItems, tone: 'text-forest-700', to: '/packing-stock' },
+    { label: 'Low Stock', value: stock.lowStock, tone: 'text-amber-600', to: '/packing-stock?stockStatus=low' },
+    { label: 'Out of Stock', value: stock.outOfStock, tone: 'text-red-600', to: '/packing-stock?stockStatus=out' },
+    { label: 'Items Used (Month)', value: stock.itemsUsedThisMonth, tone: 'text-blue-700', to: '/packing-stock' },
+  ]
+
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Boxes size={17} className="text-forest-600" /> Packing Stock</h2>
+        <Link to="/packing-stock" className="text-xs text-forest-600 hover:underline flex items-center gap-1">Open <ArrowRight size={12} /></Link>
+      </div>
+
+      {stock.totalItems === 0 ? (
+        <p className="px-5 py-6 text-sm text-gray-500 text-center">
+          No packing materials yet. <Link to="/packing-stock" className="text-forest-600 hover:underline">Import your PMST sheet</Link> to start tracking stock.
+        </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100 border-b border-gray-100">
+            {stats.map(s => (
+              <Link key={s.label} to={s.to} className="px-5 py-4 hover:bg-gray-50 transition-colors">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{s.label}</p>
+                <p className={`text-2xl font-bold mt-1 ${s.tone}`}>{s.value}</p>
+              </Link>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-gray-100">
+            <div>
+              <p className="px-5 pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Needs Attention</p>
+              <div className="divide-y divide-gray-50">
+                {stock.attention.map(m => (
+                  <Link key={m._id} to={`/packing-stock/${m._id}`} className="flex items-center justify-between gap-3 px-5 py-2.5 hover:bg-gray-50 transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{m.productName}</p>
+                      <p className="text-xs text-gray-400">
+                        {m.productCode}{m.reorderLevel > 0 && ` · reorder at ${m.reorderLevel}`}
+                      </p>
+                    </div>
+                    <span className="text-sm flex-shrink-0"><StockLevel material={m} /></span>
+                  </Link>
+                ))}
+                {!stock.attention.length && <p className="px-5 py-4 text-sm text-gray-400">All items are above their reorder level</p>}
+              </div>
+            </div>
+
+            <div className="border-t lg:border-t-0 border-gray-100">
+              <p className="px-5 pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Recent Usage</p>
+              <div className="divide-y divide-gray-50">
+                {stock.recentUsage.map(u => (
+                  <Link key={u._id} to={`/packing-stock/${u.material?._id || ''}`} className="flex items-center justify-between gap-3 px-5 py-2.5 hover:bg-gray-50 transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{u.productName}</p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {formatDate(u.date)}{u.reference && ` · ${u.reference}`}{u.userName && ` · ${u.userName}`}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-orange-700 flex-shrink-0">
+                      {u.change} <span className="text-xs font-normal text-gray-500">{u.material?.unit}</span>
+                    </span>
+                  </Link>
+                ))}
+                {!stock.recentUsage.length && <p className="px-5 py-4 text-sm text-gray-400">No stock used yet</p>}
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

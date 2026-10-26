@@ -3,6 +3,33 @@ const Procurement = require('../models/Procurement');
 const GoodsReceipt = require('../models/GoodsReceipt');
 const Vendor = require('../models/Vendor');
 const Product = require('../models/Product');
+const PackingMaterial = require('../models/PackingMaterial');
+const StockMovement = require('../models/StockMovement');
+
+// Packing stock overview: counts, items needing attention, recent usage
+const getPackingStockSummary = async (thisMonthStart) => {
+  const active = { isActive: true };
+  const [totalItems, lowStock, outOfStock, attention, recentUsage, monthUsage] = await Promise.all([
+    PackingMaterial.countDocuments(active),
+    PackingMaterial.countDocuments({ ...active, availableStock: { $gt: 0 }, ...PackingMaterial.LOW_STOCK }),
+    PackingMaterial.countDocuments({ ...active, availableStock: { $lte: 0 } }),
+    PackingMaterial.find({ ...active, $or: [{ availableStock: { $lte: 0 } }, PackingMaterial.LOW_STOCK] })
+      .sort({ availableStock: 1, productCode: 1 })
+      .limit(6)
+      .select('productCode productName availableStock reorderLevel unit'),
+    StockMovement.find({ type: 'Issue' })
+      .populate('material', 'unit')
+      .sort({ date: -1, createdAt: -1 })
+      .limit(6)
+      .select('material productCode productName change date reference userName'),
+    StockMovement.aggregate([
+      { $match: { type: 'Issue', date: { $gte: thisMonthStart } } },
+      { $group: { _id: '$material' } },
+      { $count: 'items' },
+    ]),
+  ]);
+  return { totalItems, lowStock, outOfStock, itemsUsedThisMonth: monthUsage[0]?.items || 0, attention, recentUsage };
+};
 
 // @desc    Get dashboard summary
 // @route   GET /api/dashboard
@@ -26,6 +53,7 @@ const getDashboard = async (req, res, next) => {
       recentReceipts,
       recentOrders,
       recentIndents,
+      packingStock,
     ] = await Promise.all([
       Indent.countDocuments(),
       Indent.countDocuments({ status: { $in: ['Pending', 'On Hold'] } }),
@@ -49,6 +77,7 @@ const getDashboard = async (req, res, next) => {
         .sort({ indentDate: -1 })
         .limit(5)
         .select('productCode productName indentDate status qtyToBeOrdered unit vendorName'),
+      getPackingStockSummary(thisMonthStart),
     ]);
 
     // Price trend: find products with price changes in last 60 days
@@ -104,6 +133,7 @@ const getDashboard = async (req, res, next) => {
           pendingIndents: recentIndents,
         },
         priceAlerts: priceAlerts.slice(0, 5),
+        packingStock,
       },
     });
   } catch (error) {

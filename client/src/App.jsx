@@ -16,6 +16,8 @@ import VendorList from './pages/VendorList'
 import VendorDetail from './pages/VendorDetail'
 import VendorForm from './pages/VendorForm'
 import ProductList from './pages/ProductList'
+import PackingStockList from './pages/PackingStockList'
+import PackingStockDetail from './pages/PackingStockDetail'
 import Reports from './pages/Reports'
 import UserList from './pages/UserList'
 
@@ -66,6 +68,9 @@ function AppRoutes() {
         <Route path="vendors/:id/edit" element={<VendorForm />} />
         {/* Products */}
         <Route path="products" element={<ProductList />} />
+        {/* Packing material stock */}
+        <Route path="packing-stock" element={<PackingStockList />} />
+        <Route path="packing-stock/:id" element={<PackingStockDetail />} />
         {/* Reports */}
         <Route path="reports" element={<Reports />} />
         {/* Users (admin only) */}

@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList, ShoppingCart, PackageCheck,
-  Users, Package, BarChart2, LogOut, X, Leaf, UserCog
+  Users, Package, BarChart2, LogOut, X, Leaf, UserCog, Boxes
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/goods-receipts', label: 'Goods Received', icon: PackageCheck },
   { to: '/vendors', label: 'Vendors', icon: Users },
   { to: '/products', label: 'Product Master', icon: Package },
+  { to: '/packing-stock', label: 'Packing Stock', icon: Boxes },
   { to: '/reports', label: 'Reports', icon: BarChart2 },
   { to: '/users', label: 'Users', icon: UserCog, adminOnly: true },
 ]
