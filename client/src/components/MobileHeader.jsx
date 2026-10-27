@@ -8,6 +8,8 @@ const PAGE_TITLES = {
   '/goods-receipts': 'Goods Received',
   '/vendors': 'Vendor Management',
   '/influencers': 'Influencers',
+  '/packing-batches': 'Packing Batches',
+  '/employees': 'Employees',
   '/reports': 'Reports & Analytics',
 }
 

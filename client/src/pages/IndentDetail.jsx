@@ -25,7 +25,7 @@ export default function IndentDetail() {
     try {
       await api.delete(`/indents/${id}`)
       toast.success('Indent deleted')
-      navigate('/indents')
+      navigate(indent.indentType === 'Sample' ? '/indents?type=Sample' : '/indents')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Delete failed')
     }
@@ -34,11 +34,14 @@ export default function IndentDetail() {
   if (loading) return <LoadingSpinner />
   if (!indent) return <div className="text-center py-16 text-gray-400">Indent not found</div>
 
+  const isSample = indent.indentType === 'Sample'
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3 mb-2">
-        <Link to="/indents" className="text-gray-400 hover:text-gray-600"><ArrowLeft size={20} /></Link>
+        <Link to={isSample ? '/indents?type=Sample' : '/indents'} className="text-gray-400 hover:text-gray-600"><ArrowLeft size={20} /></Link>
         <h1 className="page-title flex-1 truncate">{indent.productName}</h1>
+        {isSample && <span className="badge status-sample">Sample</span>}
         <div className="flex gap-2">
           <Link to={`/indents/${id}/edit`} className="btn-secondary"><Edit size={14} /> Edit</Link>
           <button onClick={() => setConfirmDelete(true)} className="btn-danger"><Trash2 size={14} /></button>
@@ -105,7 +108,7 @@ export default function IndentDetail() {
           <p className="text-xs text-gray-500">Create a formal purchase order from this indent</p>
         </div>
         <Link
-          to={`/procurement/new?indentId=${id}&productCode=${indent.productCode || ''}&productName=${encodeURIComponent(indent.productName)}&qty=${indent.qtyToBeOrdered || ''}&unit=${indent.unit}&vendorId=${indent.vendor?._id || ''}&intendedDate=${indent.indentDate ? formatDateInput(indent.indentDate) : ''}`}
+          to={`/procurement/new?indentId=${id}&productCode=${indent.productCode || ''}&productName=${encodeURIComponent(indent.productName)}&qty=${indent.qtyToBeOrdered || ''}&unit=${indent.unit}&vendorId=${indent.vendor?._id || ''}&intendedDate=${indent.indentDate ? formatDateInput(indent.indentDate) : ''}${isSample ? '&status=Sample' : ''}`}
           className="btn-primary"
         >
           <ShoppingCart size={14} /> Create PO

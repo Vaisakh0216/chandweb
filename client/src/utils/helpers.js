@@ -56,6 +56,10 @@ export const getStatusColor = (status) => {
     'Refunded':           'status-received',
     'Unpaid':             'status-pending',
     'Paid':               'status-received',
+    'Awaiting Packing':   'status-pending',
+    'Packing':            'status-ordered',
+    'Packed':             'status-partial',
+    'Completed':          'status-received',
   }
   return map[status] || 'status-on-hold'
 }
@@ -69,3 +73,7 @@ export const DELIVERY_STATUSES = ['Awaiting', 'In Transit', 'Received', 'Partial
 export const QUALITY_STATUSES = ['Pending Inspection', 'Approved', 'Rejected', 'Conditional Approval']
 export const INFLUENCER_PLATFORMS = ['Instagram', 'YouTube', 'Facebook', 'X', 'Other']
 export const REFUND_STATUSES = ['Awaiting Video', 'Refund Due', 'Refunded']
+export const PACKING_UNITS = ['nos', 'pieces', 'boxes', 'cartons', 'packs']
+export const PACKING_BATCH_STATUSES = ['Awaiting Packing', 'Packing', 'Packed', 'Completed']
+
+export const formatCount = (n) => Number(n || 0).toLocaleString('en-IN')

@@ -21,6 +21,8 @@ const userRoutes = require('./routes/users');
 const packingMaterialRoutes = require('./routes/packingMaterials');
 const todoRoutes = require('./routes/todos');
 const influencerRoutes = require('./routes/influencers');
+const packingBatchRoutes = require('./routes/packingBatches');
+const employeeRoutes = require('./routes/employees');
 
 // Connect to database
 connectDB();
@@ -68,6 +70,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/packing-materials', packingMaterialRoutes);
 app.use('/api/todos', todoRoutes);
 app.use('/api/influencers', influencerRoutes);
+app.use('/api/packing-batches', packingBatchRoutes);
+app.use('/api/employees', employeeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

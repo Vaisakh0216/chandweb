@@ -3,6 +3,12 @@ const mongoose = require('mongoose');
 // Procurement Indent (planning what needs to be ordered)
 // Mirrors the "Procurement Indent Status File" sheet
 const indentSchema = new mongoose.Schema({
+  // Original = regular material requirement; Sample = buying a sample to evaluate
+  indentType: {
+    type: String,
+    enum: ['Original', 'Sample'],
+    default: 'Original',
+  },
   indentDate: {
     type: Date,
     required: [true, 'Indent date is required'],

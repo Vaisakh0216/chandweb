@@ -29,6 +29,7 @@ export default function ProcurementForm() {
     unit: searchParams.get('unit') || 'kg',
     vendor: searchParams.get('vendorId') || '',
     intendedDate: searchParams.get('intendedDate') || '',
+    status: searchParams.get('status') === 'Sample' ? 'Sample' : EMPTY.status,
   })
   const indentId = !isEdit ? searchParams.get('indentId') : null
   const [linkedIndent, setLinkedIndent] = useState(null)

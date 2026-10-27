@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import api from '../api/axios'
 import VendorSelector from '../components/VendorSelector'
 import { PageHeader, LoadingSpinner } from '../components/UI'
@@ -7,6 +7,7 @@ import { UNITS, INDENT_STATUSES, formatDateInput } from '../utils/helpers'
 import toast from 'react-hot-toast'
 
 const EMPTY = {
+  indentType: 'Original',
   indentDate: formatDateInput(new Date()),
   productCode: '', productName: '', productDescription: '',
   qtyToBeOrdered: '', unit: 'kg', vendor: '', vendorName: '', vendorAlternate: '',
@@ -16,8 +17,9 @@ const EMPTY = {
 export default function IndentForm() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const isEdit = Boolean(id)
-  const [form, setForm] = useState(EMPTY)
+  const [form, setForm] = useState({ ...EMPTY, indentType: searchParams.get('type') === 'Sample' ? 'Sample' : 'Original' })
   const [linkedPO, setLinkedPO] = useState(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(isEdit)
@@ -27,6 +29,7 @@ export default function IndentForm() {
     api.get(`/indents/${id}`).then(r => {
       const d = r.data.data
       setForm({
+        indentType: d.indentType || 'Original',
         indentDate: formatDateInput(d.indentDate),
         productCode: d.productCode || '',
         productName: d.productName || '',
@@ -70,7 +73,7 @@ export default function IndentForm() {
       if (isEdit) await api.put(`/indents/${id}`, payload)
       else await api.post('/indents', payload)
       toast.success(isEdit ? 'Indent updated!' : 'Indent created!')
-      navigate('/indents')
+      navigate(form.indentType === 'Sample' ? '/indents?type=Sample' : '/indents')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save indent')
     } finally {
@@ -83,14 +86,29 @@ export default function IndentForm() {
   return (
     <div className="max-w-3xl mx-auto">
       <PageHeader
-        title={isEdit ? 'Edit Indent' : 'New Procurement Indent'}
-        subtitle="Record a material requirement for production"
+        title={isEdit ? 'Edit Indent' : form.indentType === 'Sample' ? 'New Sample Indent' : 'New Procurement Indent'}
+        subtitle={form.indentType === 'Sample' ? 'Request a sample purchase for evaluation' : 'Record a material requirement for production'}
       />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
         <div className="card p-6">
           <h2 className="font-semibold text-gray-800 mb-4">Indent Details</h2>
+          <div className="mb-4">
+            <label className="label">Indent Type</label>
+            <div className="inline-flex rounded-lg border border-gray-200 p-0.5">
+              {['Original', 'Sample'].map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, indentType: t }))}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${form.indentType === t ? 'bg-forest-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Indent Date *</label>

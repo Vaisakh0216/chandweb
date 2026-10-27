@@ -18,6 +18,10 @@ import VendorForm from './pages/VendorForm'
 import InfluencerList from './pages/InfluencerList'
 import InfluencerForm from './pages/InfluencerForm'
 import InfluencerDetail from './pages/InfluencerDetail'
+import PackingBatchList from './pages/PackingBatchList'
+import PackingBatchDetail from './pages/PackingBatchDetail'
+import EmployeeList from './pages/EmployeeList'
+import EmployeeDetail from './pages/EmployeeDetail'
 import PackingStockList from './pages/PackingStockList'
 import PackingStockDetail from './pages/PackingStockDetail'
 import Reports from './pages/Reports'
@@ -73,6 +77,11 @@ function AppRoutes() {
         <Route path="influencers/new" element={<InfluencerForm />} />
         <Route path="influencers/:id" element={<InfluencerDetail />} />
         <Route path="influencers/:id/edit" element={<InfluencerForm />} />
+        {/* Production → packing → warehouse */}
+        <Route path="packing-batches" element={<PackingBatchList />} />
+        <Route path="packing-batches/:id" element={<PackingBatchDetail />} />
+        <Route path="employees" element={<EmployeeList />} />
+        <Route path="employees/:id" element={<EmployeeDetail />} />
         {/* Packing material stock */}
         <Route path="packing-stock" element={<PackingStockList />} />
         <Route path="packing-stock/:id" element={<PackingStockDetail />} />

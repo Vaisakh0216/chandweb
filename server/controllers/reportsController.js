@@ -194,15 +194,18 @@ const exportGoodsReceiptsCSV = async (req, res, next) => {
 // @access  Private
 const exportIndentsCSV = async (req, res, next) => {
   try {
-    const records = await Indent.find().sort({ indentDate: -1 }).limit(5000);
+    const { type } = req.query;
+    const query = type === 'Sample' ? { indentType: 'Sample' } : type ? { indentType: { $ne: 'Sample' } } : {};
+    const records = await Indent.find(query).sort({ indentDate: -1 }).limit(5000);
 
     const csvRows = [
-      'SL#,Indent Date,Product Code,Product/RM Name,Qty to Be Ordered,Unit,Vendor,Status,CNS Remarks,Notes',
+      'SL#,Type,Indent Date,Product Code,Product/RM Name,Qty to Be Ordered,Unit,Vendor,Status,CNS Remarks,Notes',
     ];
 
     records.forEach((r, i) => {
       csvRows.push([
         i + 1,
+        r.indentType || 'Original',
         r.indentDate ? new Date(r.indentDate).toLocaleDateString('en-IN') : '',
         r.productCode || '',
         `"${(r.productName || '').replace(/"/g, '""')}"`,
@@ -216,7 +219,7 @@ const exportIndentsCSV = async (req, res, next) => {
     });
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="indents-${Date.now()}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${type === 'Sample' ? 'sample-' : ''}indents-${Date.now()}.csv"`);
     res.send(csvRows.join('\n'));
   } catch (error) {
     next(error);

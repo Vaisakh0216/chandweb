@@ -1,15 +1,24 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
-import { Plus, Search, Filter, Download, ChevronDown, X } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Plus, Search, Filter, Download, ChevronDown, X, ClipboardList, FlaskConical } from 'lucide-react'
 import api from '../api/axios'
 import { PageHeader, LoadingSpinner, EmptyState, Pagination } from '../components/UI'
 import StatusBadge from '../components/StatusBadge'
 import { formatDate, INDENT_STATUSES } from '../utils/helpers'
 import toast from 'react-hot-toast'
 
+const TABS = [
+  { type: 'Original', label: 'Original', icon: ClipboardList },
+  { type: 'Sample', label: 'Sample', icon: FlaskConical },
+]
+
 export default function IndentList() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const type = searchParams.get('type') === 'Sample' ? 'Sample' : 'Original'
+  const isSample = type === 'Sample'
   const [indents, setIndents] = useState([])
   const [pagination, setPagination] = useState(null)
+  const [counts, setCounts] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({ search: '', status: '', dateFrom: '', dateTo: '' })
@@ -18,17 +27,23 @@ export default function IndentList() {
   const fetchIndents = useCallback(async () => {
     setLoading(true)
     try {
-      const params = { page, limit: 25, ...filters }
+      const params = { page, limit: 25, type, ...filters }
       Object.keys(params).forEach(k => !params[k] && delete params[k])
       const res = await api.get('/indents', { params })
       setIndents(res.data.data)
       setPagination(res.data.pagination)
+      setCounts(res.data.counts)
     } catch {
       toast.error('Failed to load indents')
     } finally {
       setLoading(false)
     }
-  }, [page, filters])
+  }, [page, filters, type])
+
+  const switchTab = (t) => {
+    setSearchParams(t === 'Sample' ? { type: 'Sample' } : {}, { replace: true })
+    setPage(1)
+  }
 
   useEffect(() => { fetchIndents() }, [fetchIndents])
 
@@ -43,17 +58,33 @@ export default function IndentList() {
         actions={
           <>
             <button
-              onClick={() => { window.location.href = '/api/reports/export/indents?token=' + localStorage.getItem('token') }}
+              onClick={() => { window.location.href = `/api/reports/export/indents?type=${type}&token=` + localStorage.getItem('token') }}
               className="btn-secondary"
             >
               <Download size={15} /> Export CSV
             </button>
-            <Link to="/indents/new" className="btn-primary">
-              <Plus size={15} /> New Indent
+            <Link to={isSample ? '/indents/new?type=Sample' : '/indents/new'} className="btn-primary">
+              <Plus size={15} /> {isSample ? 'New Sample Indent' : 'New Indent'}
             </Link>
           </>
         }
       />
+
+      {/* Original / Sample tabs */}
+      <div className="flex gap-1 mb-4 border-b border-gray-200">
+        {TABS.map(({ type: t, label, icon: Icon }) => (
+          <button
+            key={t}
+            onClick={() => switchTab(t)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              type === t ? 'border-forest-600 text-forest-700' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Icon size={15} /> {label}
+            {counts && <span className={`text-xs px-1.5 py-0.5 rounded-full ${type === t ? 'bg-forest-100 text-forest-700' : 'bg-gray-100 text-gray-500'}`}>{counts[t]}</span>}
+          </button>
+        ))}
+      </div>
 
       {/* Search & Filter Bar */}
       <div className="card p-4 mb-4">
@@ -103,7 +134,12 @@ export default function IndentList() {
       {/* Table */}
       <div className="card">
         {loading ? <LoadingSpinner /> : indents.length === 0 ? (
-          <EmptyState icon={ClipboardListIcon} title="No indents found" description="Create your first procurement indent to get started" action={<Link to="/indents/new" className="btn-primary">New Indent</Link>} />
+          <EmptyState
+            icon={isSample ? FlaskConical : ClipboardList}
+            title={isSample ? 'No sample indents found' : 'No indents found'}
+            description={isSample ? 'Raise an indent to purchase a sample for evaluation' : 'Create your first procurement indent to get started'}
+            action={<Link to={isSample ? '/indents/new?type=Sample' : '/indents/new'} className="btn-primary">{isSample ? 'New Sample Indent' : 'New Indent'}</Link>}
+          />
         ) : (
           <>
             <div className="table-container">
@@ -155,4 +191,3 @@ export default function IndentList() {
   )
 }
 
-function ClipboardListIcon({ size }) { return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="6" height="4" x="9" y="3" rx="1"/><path d="M9 12h6M9 16h6"/></svg> }

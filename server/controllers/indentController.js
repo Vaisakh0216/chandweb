@@ -2,13 +2,16 @@ const Indent = require('../models/Indent');
 const Vendor = require('../models/Vendor');
 const { applyPOStatus } = require('../utils/indentSync');
 
+// Indents created before indentType existed have no value and count as Original
+const typeFilter = (type) => (type === 'Sample' ? { indentType: 'Sample' } : { indentType: { $ne: 'Sample' } });
+
 // @desc    Get all indents
 // @route   GET /api/indents
 // @access  Private
 const getIndents = async (req, res, next) => {
   try {
-    const { search, status, vendor, dateFrom, dateTo, page = 1, limit = 20, sort = '-indentDate' } = req.query;
-    const query = {};
+    const { search, status, vendor, dateFrom, dateTo, type, page = 1, limit = 20, sort = '-indentDate' } = req.query;
+    const query = type ? typeFilter(type) : {};
 
     if (search) {
       query.$or = [
@@ -26,7 +29,7 @@ const getIndents = async (req, res, next) => {
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const [indents, total] = await Promise.all([
+    const [indents, total, originalCount, sampleCount] = await Promise.all([
       Indent.find(query)
         .populate('vendor', 'name contactPerson phone email')
         .populate('assignedTo', 'name')
@@ -35,11 +38,14 @@ const getIndents = async (req, res, next) => {
         .skip(skip)
         .limit(parseInt(limit)),
       Indent.countDocuments(query),
+      Indent.countDocuments(typeFilter('Original')),
+      Indent.countDocuments(typeFilter('Sample')),
     ]);
 
     res.json({
       success: true,
       data: indents.map(applyPOStatus),
+      counts: { Original: originalCount, Sample: sampleCount },
       pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) },
     });
   } catch (error) {
